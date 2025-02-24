@@ -106,18 +106,42 @@ public class ReservaController {
         return ResponseEntity.ok(reservasDTO);
     }
 
+    @GetMapping("/mis_reservas")
+    public ResponseEntity<List<ReservaConClientesMesa>> getMisReservas(Authentication authentication) {
+        String emailAutenticado = authentication.getName(); // Obtiene el email del usuario autenticado
+        List<ReservaConClientesMesa> reservasDTO = new ArrayList<>();
+
+        // Filtrar reservas del usuario autenticado
+        reservaRepository.findByClienteEmail(emailAutenticado).forEach(reserva -> {
+            reservasDTO.add(
+                    ReservaConClientesMesa.builder()
+                            .id(reserva.getId())
+                            .nombreCliente(reserva.getCliente().getNombre())
+                            .emailCliente(reserva.getCliente().getEmail())
+                            .telefonoCliente(reserva.getCliente().getTelefono())
+                            .numeroMesa(reserva.getMesa().getNumero())
+                            .descripcionMesa(reserva.getMesa().getDescripcion())
+                            .numeroPersonas(reserva.getNumeroPersonas())
+                            .fechaReserva(reserva.getFecha())
+                            .horaReserva(reserva.getHora())
+                            .build()
+            );
+        });
+
+        return ResponseEntity.ok(reservasDTO);
+    }
+
+
 
     @PostMapping("/reservas/add")
     public ResponseEntity<String> createReserva(@RequestBody @Valid Reserva nuevaReserva, Authentication authentication) {
         System.out.println(" Recibiendo solicitud para crear reserva...");
 
         // Obtener el usuario autenticado
-        String username = authentication.getName();
-        System.out.println(" Buscando usuario con username: " + username);
-
-        // Buscar el usuario en la base de datos
-        UserEntity usuario = userEntityRepository.findByUsername(username)
+        String email = authentication.getName();
+        UserEntity usuario = userEntityRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
 
         // Buscar el cliente relacionado con el usuario
         Cliente cliente = clienteRepository.findByUsuario(usuario)

@@ -36,16 +36,18 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = this.extractToken(request);
 
         if(this.tokenProvider.isValidToken(token)){
-            String username = this.tokenProvider.getUsernameFromToken(token);
+            String email = this.tokenProvider.getUsernameFromToken(token); // ✅ Esto ahora devuelve el email
+            UserDetails user = this.userDetailsService.loadUserByUsername(email); // ✅ Ahora busca por email
 
-            //UserDetails representa al usuario
-            UserDetails user = this.userDetailsService.loadUserByUsername(username); //Carga el usuario de la base de datos
+
 
             //Información sobre el usuario que se acaba de autenticar
             Authentication auth = new UsernamePasswordAuthenticationToken(
-                    user.getUsername(),
+                    email,  // Ahora aquí usamos el email
                     user.getPassword(),
-                    user.getAuthorities());
+                    user.getAuthorities()
+            );
+
 
             //SecurityContext permite ver o establecer un usuario logeado
             SecurityContextHolder.getContext().setAuthentication(auth);
